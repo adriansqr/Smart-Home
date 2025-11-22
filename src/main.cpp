@@ -25,7 +25,7 @@ void setup() {
     Serial.print(".");
     delay(300);
   }
-    Serial.println("\nConnected with IP: " + WiFi.localIP().toString());
+  Serial.println("\nConnected with IP: " + WiFi.localIP().toString());
 
   // LCD setup
   lcd.init();
