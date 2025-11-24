@@ -15,8 +15,8 @@
 #include <Ticker.h>
 
 // ===== CONFIG =====
-const char* WIFI_SSID = "Daniel@time";
-const char* WIFI_PASS = "zurina@time";
+const char* WIFI_SSID = "Lothric";
+const char* WIFI_PASS = "tupaiberenang";
 const char* BLYNK_AUTH = "lwCLoMljKjkk8wIPttzbcpeGvTDOv-nJ";
 
 // ===== PIN MAP =====
