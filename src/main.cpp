@@ -17,7 +17,7 @@
 // ===== CONFIG =====
 const char* WIFI_SSID = "Lothric";
 const char* WIFI_PASS = "tupaiberenang";
-const char* BLYNK_AUTH = "lwCLoMljKjkk8wIPttzbcpeGvTDOv-nJ";
+const char* BLYNK_AUTH = "";
 
 // ===== PIN MAP =====
 const uint8_t RELAY_PINS[4] = {14, 27, 26, 25}; // relays 1..4 (active LOW)
