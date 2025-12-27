@@ -1,11 +1,12 @@
 /*
-  SmartHome - ESP32 + Blynk (Option C)
+  SmartHome - ESP32 + Blynk (Option C) - Robust WiFi Handling
   - 4 relays (V0..V3)
   - 2 LEDs to mirror two lights
   - I2C LCD (16x2)
   - Buzzer
   - Uses BLYNK callbacks + periodic Blynk.syncVirtual to ensure cloud updates are applied
 */
+
 #define BLYNK_TEMPLATE_ID "TMPL6DPwOBZJY"
 #define BLYNK_TEMPLATE_NAME "SmartHome"
 
@@ -15,8 +16,8 @@
 #include <Ticker.h>
 
 // ===== CONFIG =====
-const char* WIFI_SSID = "Lothric";
-const char* WIFI_PASS = "tupaiberenang";
+const char* WIFI_SSID = "Daniel@time";
+const char* WIFI_PASS = "zurina@time";
 const char* BLYNK_AUTH = "lwCLoMljKjkk8wIPttzbcpeGvTDOv-nJ";
 
 // ===== PIN MAP =====
@@ -84,6 +85,57 @@ BLYNK_WRITE(V1) { updateRelay(1, param.asInt() != 0); }
 BLYNK_WRITE(V2) { updateRelay(2, param.asInt() != 0); }
 BLYNK_WRITE(V3) { updateRelay(3, param.asInt() != 0); }
 
+// ===== WIFI + BLYNK HELPER =====
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  lcd.clear();
+  lcd.print("Connecting WiFi");
+  Serial.print("Connecting to WiFi");
+  
+  unsigned long startAttemptTime = millis();
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (millis() - startAttemptTime > 15000) { // retry every 15s
+      Serial.println("\nRetrying WiFi...");
+      WiFi.disconnect(true);
+      WiFi.begin(WIFI_SSID, WIFI_PASS);
+      startAttemptTime = millis();
+      lcd.clear();
+      lcd.print("Retrying WiFi");
+      beep(100);
+    }
+  }
+  
+  Serial.println("\nWiFi Connected!");
+  Serial.print("IP: "); Serial.println(WiFi.localIP());
+  lcd.clear();
+  lcd.setCursor(0,0); lcd.print("WiFi Connected");
+  lcd.setCursor(0,1); lcd.print(WiFi.localIP().toString());
+}
+
+void connectBlynk() {
+  lcd.clear(); lcd.print("Connecting Blynk");
+  Blynk.config(BLYNK_AUTH);
+  Blynk.connect();
+
+  unsigned long blynkStart = millis();
+  while (!Blynk.connected() && millis() - blynkStart < 10000) {
+    Blynk.run();
+    delay(100);
+    Serial.print(".");
+  }
+
+  if (Blynk.connected()) {
+    lcd.clear(); lcd.print("Blynk Connected");
+    Serial.println("\nBlynk connected!");
+  } else {
+    lcd.clear(); lcd.print("Blynk Failed");
+    Serial.println("\nFailed to connect Blynk");
+  }
+}
+
 // ===== SETUP =====
 void setup() {
   Serial.begin(115200);
@@ -92,7 +144,7 @@ void setup() {
   // GPIO init
   for (uint8_t i = 0; i < 4; ++i) {
     pinMode(RELAY_PINS[i], OUTPUT);
-    digitalWrite(RELAY_PINS[i], HIGH); // default OFF
+    digitalWrite(RELAY_PINS[i], HIGH);
   }
   for (uint8_t i = 0; i < 2; ++i) {
     pinMode(LED_PINS[i], OUTPUT);
@@ -103,31 +155,14 @@ void setup() {
   // LCD
   lcd.init();
   lcd.backlight();
-  lcd.setCursor(0,0);
-  lcd.print("SmartHome Boot");
+  lcd.setCursor(0,0); lcd.print("SmartHome Boot");
   delay(700);
 
-  // Connect to Blynk
-  lcd.clear();
-  lcd.print("Connecting Blynk");
-  Serial.println("Connecting to Blynk...");
-  Blynk.begin(BLYNK_AUTH, WIFI_SSID, WIFI_PASS);
+  // Connect WiFi and Blynk
+  connectWiFi();
+  connectBlynk();
 
-  // Show IP
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("IP:");
-    lcd.setCursor(0,1);
-    lcd.print(WiFi.localIP().toString());
-  } else {
-    lcd.clear();
-    lcd.print("WiFi Failed");
-  }
-
-  // start with all OFF
+  // Start with all relays OFF
   for (uint8_t i = 0; i < 4; ++i) updateRelay(i, false);
 
   // Sync every 7s to catch IFTTT updates
@@ -140,6 +175,18 @@ void setup() {
 
 // ===== LOOP =====
 void loop() {
+  // Auto reconnect WiFi if disconnected
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost! Reconnecting...");
+    connectWiFi();
+  }
+
+  // Auto reconnect Blynk if disconnected
+  if (!Blynk.connected()) {
+    Serial.println("Blynk lost! Reconnecting...");
+    connectBlynk();
+  }
+
   Blynk.run();
   blynkTimer.run();
 }
