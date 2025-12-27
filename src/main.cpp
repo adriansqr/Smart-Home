@@ -16,9 +16,11 @@
 #include <Ticker.h>
 
 // ===== CONFIG =====
+
 const char* WIFI_SSID = "Daniel@time";
 const char* WIFI_PASS = "zurina@time";
 const char* BLYNK_AUTH = "lwCLoMljKjkk8wIPttzbcpeGvTDOv-nJ";
+
 
 // ===== PIN MAP =====
 const uint8_t RELAY_PINS[4] = {14, 27, 26, 25}; // relays 1..4 (active LOW)
